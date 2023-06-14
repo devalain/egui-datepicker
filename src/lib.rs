@@ -189,29 +189,48 @@ impl<'a> DatePicker<'a> {
         });
     }
 
-    /// Draw button with text and add duration to current date when that button is clicked.
-    fn date_step_button(&mut self, ui: &mut Ui, text: impl ToString, duration: Duration) {
+    fn date_step_year_button(&mut self, ui: &mut Ui, text: impl ToString, years: i32) {
         if ui.button(text.to_string()).clicked() {
-            *self.date += duration;
+            let year = self.date.year() + years;
+            *self.date = self.date.with_year(year).unwrap();
+        }
+    }
+
+    fn date_step_month_button(&mut self, ui: &mut Ui, text: impl ToString, months: i32) {
+        if ui.button(text.to_string()).clicked() {
+            let mut month0 = self.date.month0() as i32 + months;
+            let mut year = self.date.year();
+            if month0 < 0 {
+                let dy = if month0 % 12 == 0 {
+                    -month0 / 12
+                } else {
+                    -month0 / 12 + 1
+                };
+                year -= dy;
+                month0 += 12 * dy;
+            }
+            year += month0 / 12;
+            let month = (month0 % 12 + 1) as u32;
+            *self.date = self.date.with_year(year).unwrap().with_month(month).unwrap();
         }
     }
 
     /// Draw drag value widget with current year and two buttons which substract and add 365 days
     /// to current date.
     fn show_year_control(&mut self, ui: &mut Ui) {
-        self.date_step_button(ui, "<", Duration::days(-365));
+        self.date_step_year_button(ui, "<", -1);
         let mut drag_year = self.date.year();
         ui.add(DragValue::new(&mut drag_year));
         if drag_year != self.date.year() {
             *self.date = self.date.with_year(drag_year).unwrap();
         }
-        self.date_step_button(ui, ">", Duration::days(365));
+        self.date_step_year_button(ui, ">", 1);
     }
 
     /// Draw label(will be combobox in future) with current month and two buttons which substract and add 30 days
     /// to current date.
     fn show_month_control(&mut self, ui: &mut Ui) {
-        self.date_step_button(ui, "<", Duration::days(-30));
+        self.date_step_month_button(ui, "<", -1);
         let month_string = chrono::Month::from_u32(self.date.month()).unwrap().name();
         // TODO: When https://github.com/emilk/egui/pull/543 is merged try to change label to combo box.
         ui.add(egui::Label::new(
@@ -226,7 +245,7 @@ impl<'a> DatePicker<'a> {
         // if selected != self.date.month0() as usize {
         //     *self.date = self.date.with_month0(selected as u32).unwrap();
         // }
-        self.date_step_button(ui, ">", Duration::days(30));
+        self.date_step_month_button(ui, ">", 1);
     }
 }
 
