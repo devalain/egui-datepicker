@@ -20,6 +20,8 @@
 //!
 //! [ex]: ./examples/simple.rs
 
+mod tr;
+
 use std::hash::Hash;
 
 pub use chrono::{
@@ -31,7 +33,6 @@ use eframe::{
     egui,
     egui::{Area, Color32, DragValue, Frame, Id, Key, Order, Response, RichText, Ui, Widget},
 };
-use num_traits::FromPrimitive;
 
 /// Default values of fields are:
 /// - sunday_first: `false`
@@ -117,8 +118,7 @@ impl<'a> DatePicker<'a> {
             [0, 1, 2, 3, 4, 5, 6]
         };
         for i in day_indexes {
-            let b = Weekday::from_u8(i).unwrap();
-            ui.label(b.to_string());
+            ui.label(tr::WEEKDAYS[i as usize][0..3].to_string());
         }
     }
 
@@ -183,7 +183,7 @@ impl<'a> DatePicker<'a> {
         ui.horizontal(|ui| {
             self.show_month_control(ui);
             self.show_year_control(ui);
-            if ui.button("Today").clicked() {
+            if ui.button(tr::TODAY).clicked() {
                 *self.date = Local::now().date_naive();
             }
         });
@@ -231,7 +231,7 @@ impl<'a> DatePicker<'a> {
     /// to current date.
     fn show_month_control(&mut self, ui: &mut Ui) {
         self.date_step_month_button(ui, "<", -1);
-        let month_string = chrono::Month::from_u32(self.date.month()).unwrap().name();
+        let month_string = tr::MONTH_NAMES[self.date.month0() as usize];
         // TODO: When https://github.com/emilk/egui/pull/543 is merged try to change label to combo box.
         ui.add(egui::Label::new(
             RichText::new(format!("{: <9}", month_string)).text_style(egui::TextStyle::Monospace),
